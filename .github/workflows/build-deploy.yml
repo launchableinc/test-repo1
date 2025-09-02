@@ -12,6 +12,9 @@ on:
         description: "commit that was built/deployed"
         value: ${{ jobs.build.outputs.commit }}
   workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   build:
