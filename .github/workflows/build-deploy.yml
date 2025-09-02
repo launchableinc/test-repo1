@@ -11,6 +11,7 @@ on:
       commit:
         description: "commit that was built/deployed"
         value: ${{ jobs.build.outputs.commit }}
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,6 +20,10 @@ jobs:
       commit: ${{ steps.capture-sha.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          repository: launchableinc/test-repo1
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # ①  build your artefact
       - name: Build
