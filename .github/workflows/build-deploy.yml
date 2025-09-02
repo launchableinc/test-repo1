@@ -1,0 +1,40 @@
+name: build-and-deploy-service
+on:
+  workflow_call:                       # <── lets other repos call this workflow
+    inputs:
+      environment:                     # optional, in case you deploy to dev/stg/…
+        required: false
+        type: string
+        default: test
+
+    outputs:                           # hand the deployed commit SHA to caller
+      commit:
+        description: "commit that was built/deployed"
+        value: ${{ jobs.build.outputs.commit }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      commit: ${{ steps.capture-sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # ①  build your artefact
+      - name: Build
+        run: |
+          make build                       # or mvn, gradle, docker build …
+
+      # ②  record *all* new commits in Launchable for *this* repo
+      - name: Record commits in Launchable
+        run: launchable record commit --source .
+        env:
+          LAUNCHABLE_TOKEN: ${{ secrets.LAUNCHABLE_TOKEN }}
+
+      # ③  expose the commit SHA to the caller
+      - id: capture-sha
+        run: echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      # ④  deploy the artefact (whatever “deploy” means for you)
+      - name: Deploy to ${{ inputs.environment }}
+        run: ./scripts/deploy.sh "$GITHUB_SHA" "${{ inputs.environment }}"
